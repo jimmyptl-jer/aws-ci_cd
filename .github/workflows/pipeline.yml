@@ -1,165 +1,165 @@
-# The name of the workflow.
-name: Bookstore CI/CD
+# # The name of the workflow.
+# name: Bookstore CI/CD
 
-# Define when the workflow should run. In this case, it triggers on a push to the main branch.
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+# # Define when the workflow should run. In this case, it triggers on a push to the main branch.
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
 
-# Define jobs for the workflow. Each job represents a step in the CI/CD process.
-jobs:
-  # Build job to install dependencies and build both client and server apps.
-  build:
-    # Specify a matrix strategy to allow for different configurations. Here, it’s set to use Node.js version 23.
-    strategy:
-      matrix:
-        node_version: [23]
+# # Define jobs for the workflow. Each job represents a step in the CI/CD process.
+# jobs:
+#   # Build job to install dependencies and build both client and server apps.
+#   build:
+#     # Specify a matrix strategy to allow for different configurations. Here, it’s set to use Node.js version 23.
+#     strategy:
+#       matrix:
+#         node_version: [23]
 
-    # Set the operating system to run the job on.
-    runs-on: ubuntu-latest
+#     # Set the operating system to run the job on.
+#     runs-on: ubuntu-latest
 
-    # Define steps to be executed as part of the build job.
-    steps:
-      # Step 1: Checkout the code from the GitHub repository.
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     # Define steps to be executed as part of the build job.
+#     steps:
+#       # Step 1: Checkout the code from the GitHub repository.
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js based on the version specified in the matrix.
-      - name: Setup Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node_version }}
+#       # Step 2: Set up Node.js based on the version specified in the matrix.
+#       - name: Setup Node.js ${{ matrix.node_version }}
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: ${{ matrix.node_version }}
 
-      # Step 3: Install dependencies and build the client application located in the ./client directory.
-      - name: Install Dependencies and Build Client
-        working-directory: ./client
-        run: |
-          npm install
-          npm run build
+#       # Step 3: Install dependencies and build the client application located in the ./client directory.
+#       - name: Install Dependencies and Build Client
+#         working-directory: ./client
+#         run: |
+#           npm install
+#           npm run build
 
-      # Step 4: Install dependencies for the server application located in the ./api directory.
-      - name: Install Dependencies and Build Server
-        working-directory: ./api
-        run: |
-          npm install
+#       # Step 4: Install dependencies for the server application located in the ./api directory.
+#       - name: Install Dependencies and Build Server
+#         working-directory: ./api
+#         run: |
+#           npm install
 
-  # Deploy job to build and push Docker images to Docker Hub.
-  docker-registry-upload:
-    # Specify the OS to run the job on.
-    runs-on: ubuntu-latest
-    needs: build
+#   # Deploy job to build and push Docker images to Docker Hub.
+#   docker-registry-upload:
+#     # Specify the OS to run the job on.
+#     runs-on: ubuntu-latest
+#     needs: build
 
-    # Define the steps to execute in the deployment job.
-    steps:
-      # Step 1: Checkout the code from the GitHub repository.
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     # Define the steps to execute in the deployment job.
+#     steps:
+#       # Step 1: Checkout the code from the GitHub repository.
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      # Step 2: Build Docker image for the client application in ./client.
-      - name: Build Client Docker Image
-        working-directory: ./client
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/bookstore:client .
+#       # Step 2: Build Docker image for the client application in ./client.
+#       - name: Build Client Docker Image
+#         working-directory: ./client
+#         run: |
+#           docker build -t ${{ secrets.DOCKER_USERNAME }}/bookstore:client .
 
-      # Step 3: Build Docker image for the server application in ./api.
-      - name: Build Server Docker Image
-        working-directory: ./api
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/bookstore:api .
+#       # Step 3: Build Docker image for the server application in ./api.
+#       - name: Build Server Docker Image
+#         working-directory: ./api
+#         run: |
+#           docker build -t ${{ secrets.DOCKER_USERNAME }}/bookstore:api .
 
-      # Step 4: Log in to Docker Hub using Docker Hub credentials stored in GitHub secrets.
-      - name: Docker Hub Login
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+#       # Step 4: Log in to Docker Hub using Docker Hub credentials stored in GitHub secrets.
+#       - name: Docker Hub Login
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 5: Push both client and server Docker images to Docker Hub.
-      - name: Push Docker Images To Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/bookstore:client
-          docker push ${{ secrets.DOCKER_USERNAME }}/bookstore:api
+#       # Step 5: Push both client and server Docker images to Docker Hub.
+#       - name: Push Docker Images To Docker Hub
+#         run: |
+#           docker push ${{ secrets.DOCKER_USERNAME }}/bookstore:client
+#           docker push ${{ secrets.DOCKER_USERNAME }}/bookstore:api
 
-  # Job to deploy infrastructure using Terraform.
-  infra-deploy:
-    # Specify the OS to run the job on.
-    runs-on: ubuntu-latest
-    # Set a dependency on the docker-registry-upload job to ensure images are pushed first.
-    needs: docker-registry-upload
+#   # Job to deploy infrastructure using Terraform.
+#   infra-deploy:
+#     # Specify the OS to run the job on.
+#     runs-on: ubuntu-latest
+#     # Set a dependency on the docker-registry-upload job to ensure images are pushed first.
+#     needs: docker-registry-upload
 
-    steps:
-      # Step 1: Checkout the code from the GitHub repository.
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     steps:
+#       # Step 1: Checkout the code from the GitHub repository.
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      # Step 2: Set up Terraform CLI with the specified version.
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.1.7"
-          cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
+#       # Step 2: Set up Terraform CLI with the specified version.
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: "1.1.7"
+#           cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
 
-      # Step 3: Optionally check the formatting of Terraform files.
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt -check
-        working-directory: ./terraform
-        continue-on-error: true
+#       # Step 3: Optionally check the formatting of Terraform files.
+#       - name: Terraform fmt
+#         id: fmt
+#         run: terraform fmt -check
+#         working-directory: ./terraform
+#         continue-on-error: true
 
-      # Step 4: Initialize Terraform to download providers and set up the backend.
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
+#       # Step 4: Initialize Terraform to download providers and set up the backend.
+#       - name: Terraform Init
+#         working-directory: ./terraform
+#         run: terraform init
 
-      # Step 5: Run Terraform Plan to preview changes to be applied.
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#       # Step 5: Run Terraform Plan to preview changes to be applied.
+#       - name: Terraform Plan
+#         working-directory: ./terraform
+#         run: terraform plan
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Step 6: Apply the Terraform Plan to deploy infrastructure on AWS.
-      - name: Terraform Apply
-        working-directory: ./terraform
-        run: terraform apply -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
+#       # Step 6: Apply the Terraform Plan to deploy infrastructure on AWS.
+#       - name: Terraform Apply
+#         working-directory: ./terraform
+#         run: terraform apply -auto-approve
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
 
-  # Optional job to destroy infrastructure after deployment if necessary.
-  infra-destroy:
-    # Specify the OS to run the job on.
-    runs-on: ubuntu-latest
-    # Define dependency on infra-deploy job and set to run only on push to main.
-    needs: infra-deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+#   # Optional job to destroy infrastructure after deployment if necessary.
+#   infra-destroy:
+#     # Specify the OS to run the job on.
+#     runs-on: ubuntu-latest
+#     # Define dependency on infra-deploy job and set to run only on push to main.
+#     needs: infra-deploy
+#     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-    steps:
-      # Step 1: Checkout the code from the GitHub repository.
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     steps:
+#       # Step 1: Checkout the code from the GitHub repository.
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      # Step 2: Set up Terraform CLI with the specified version.
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.1.7"
-          cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
+#       # Step 2: Set up Terraform CLI with the specified version.
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: "1.1.7"
+#           cli_config_credentials_token: ${{ secrets.TF_CLOUD_TOKEN }}
 
-      # Step 3: Initialize Terraform to set up the backend.
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
+#       # Step 3: Initialize Terraform to set up the backend.
+#       - name: Terraform Init
+#         working-directory: ./terraform
+#         run: terraform init
 
-      # Step 4: Run Terraform Destroy to remove the infrastructure.
-      - name: Terraform Destroy
-        working-directory: ./terraform
-        run: terraform destroy -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
+#       # Step 4: Run Terraform Destroy to remove the infrastructure.
+#       - name: Terraform Destroy
+#         working-directory: ./terraform
+#         run: terraform destroy -auto-approve
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
