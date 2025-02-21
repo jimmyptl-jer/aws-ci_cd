@@ -1,8 +1,3 @@
-# Provider configuration for AWS
-provider "aws" {
-  region = "us-east-1"  # Set the AWS region for resources
-}
-
 # Fetch the latest Ubuntu AMI dynamically based on filters
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -143,7 +138,7 @@ resource "aws_key_pair" "deployer" {
 # Create the Ubuntu EC2 instance
 resource "aws_instance" "web_ubuntu" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
+  instance_type          = "t2.micro"
   key_name               = "web-server-key"
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
@@ -157,7 +152,7 @@ resource "aws_instance" "web_ubuntu" {
 # Create the Amazon Linux EC2 instance
 resource "aws_instance" "web_linux" {
   ami                    = data.aws_ami.amazon_linux.id
-  instance_type          = var.instance_type
+  instance_type          = "t2.micro"
   key_name               = "web-server-key"
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
