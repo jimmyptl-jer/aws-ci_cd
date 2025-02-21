@@ -1,93 +1,93 @@
-name: BookStore Scan and Push Docker Images
+# name: BookStore Scan and Push Docker Images
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-jobs:
-  docker-registry-upload:
-    runs-on: ubuntu-latest
+# jobs:
+#   docker-registry-upload:
+#     runs-on: ubuntu-latest
 
-    steps:
-      # Step 1: Checkout the repository code
-      - name: Checkout Code
-        uses: actions/checkout@v4
+#     steps:
+#       # Step 1: Checkout the repository code
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
 
-      # Step 2: Log in to Docker Hub
-      - name: Docker Hub Login
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+#       # Step 2: Log in to Docker Hub
+#       - name: Docker Hub Login
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 3: Install and Run Docker Bench Security
-      - name: Install and Run Docker Bench Security
-        run: |
-          # Clone the Docker Bench Security repository
-          git clone https://github.com/docker/docker-bench-security.git
-          cd docker-bench-security
-          # Run Docker Bench Security script and save output to a report
-          sudo sh docker-bench-security.sh > docker-bench-report.txt
-          # Print the report for visibility
-          cat docker-bench-report.txt
-        continue-on-error: true # Allow the workflow to continue even if warnings are found
+#       # Step 3: Install and Run Docker Bench Security
+#       - name: Install and Run Docker Bench Security
+#         run: |
+#           # Clone the Docker Bench Security repository
+#           git clone https://github.com/docker/docker-bench-security.git
+#           cd docker-bench-security
+#           # Run Docker Bench Security script and save output to a report
+#           sudo sh docker-bench-security.sh > docker-bench-report.txt
+#           # Print the report for visibility
+#           cat docker-bench-report.txt
+#         continue-on-error: true # Allow the workflow to continue even if warnings are found
 
-      # Step 4: Upload Docker Bench Security Report as an artifact
-      - name: Upload Docker Bench Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: docker-bench-report # Name of the artifact
-          path: docker-bench-security/docker-bench-report.txt # Path to the report file
+#       # Step 4: Upload Docker Bench Security Report as an artifact
+#       - name: Upload Docker Bench Report
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: docker-bench-report # Name of the artifact
+#           path: docker-bench-security/docker-bench-report.txt # Path to the report file
 
-      # Step 5: Build the Client Docker Image without pushing
-      - name: Build Client Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./client # Directory containing Dockerfile for the client
-          platforms: linux/amd64 # Target platform for the image
-          tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image tag
-          push: false # Skip pushing the image at this stage
+#       # Step 5: Build the Client Docker Image without pushing
+#       - name: Build Client Docker Image
+#         uses: docker/build-push-action@v6
+#         with:
+#           context: ./client # Directory containing Dockerfile for the client
+#           platforms: linux/amd64 # Target platform for the image
+#           tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image tag
+#           push: false # Skip pushing the image at this stage
 
-      # Step 6: Build the Server Docker Image without pushing
-      - name: Build Server Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./api # Directory containing Dockerfile for the server
-          platforms: linux/amd64 # Target platform for the image
-          tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image tag
-          push: false # Skip pushing the image at this stage
+#       # Step 6: Build the Server Docker Image without pushing
+#       - name: Build Server Docker Image
+#         uses: docker/build-push-action@v6
+#         with:
+#           context: ./api # Directory containing Dockerfile for the server
+#           platforms: linux/amd64 # Target platform for the image
+#           tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image tag
+#           push: false # Skip pushing the image at this stage
 
-      # Step 7: Scan the Client Docker Image for vulnerabilities
-      - name: Scan Client Docker Image for Vulnerabilities
-        uses: anchore/scan-action@v3
-        with:
-          image: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image to scan
-          fail-build: false # Do not fail the build for vulnerabilities, just report
-          output-format: sarif # Output the scan results in SARIF format for GitHub security reports
+#       # Step 7: Scan the Client Docker Image for vulnerabilities
+#       - name: Scan Client Docker Image for Vulnerabilities
+#         uses: anchore/scan-action@v3
+#         with:
+#           image: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image to scan
+#           fail-build: false # Do not fail the build for vulnerabilities, just report
+#           output-format: sarif # Output the scan results in SARIF format for GitHub security reports
 
-      # Step 8: Scan the Server Docker Image for vulnerabilities
-      - name: Scan Server Docker Image for Vulnerabilities
-        uses: anchore/scan-action@v3
-        with:
-          image: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image to scan
-          fail-build: false # Do not fail the build for vulnerabilities, just report
-          output-format: sarif # Output the scan results in SARIF format for GitHub security reports
+#       # Step 8: Scan the Server Docker Image for vulnerabilities
+#       - name: Scan Server Docker Image for Vulnerabilities
+#         uses: anchore/scan-action@v3
+#         with:
+#           image: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image to scan
+#           fail-build: false # Do not fail the build for vulnerabilities, just report
+#           output-format: sarif # Output the scan results in SARIF format for GitHub security reports
 
-      # Step 9: Push the Client Docker Image to Docker Hub
-      - name: Push Client Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./client # Directory containing Dockerfile for the client
-          platforms: linux/amd64 # Target platform for the image
-          tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image tag
-          push: true # Push the image to Docker Hub
+#       # Step 9: Push the Client Docker Image to Docker Hub
+#       - name: Push Client Docker Image
+#         uses: docker/build-push-action@v6
+#         with:
+#           context: ./client # Directory containing Dockerfile for the client
+#           platforms: linux/amd64 # Target platform for the image
+#           tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-client:latest # Image tag
+#           push: true # Push the image to Docker Hub
 
-      # Step 10: Push the Server Docker Image to Docker Hub
-      - name: Push Server Docker Image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./api # Directory containing Dockerfile for the server
-          platforms: linux/amd64 # Target platform for the image
-          tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image tag
-          push: true # Push the image to Docker Hub
+#       # Step 10: Push the Server Docker Image to Docker Hub
+#       - name: Push Server Docker Image
+#         uses: docker/build-push-action@v6
+#         with:
+#           context: ./api # Directory containing Dockerfile for the server
+#           platforms: linux/amd64 # Target platform for the image
+#           tags: ${{ secrets.DOCKER_USERNAME }}/bookstore-server:latest # Image tag
+#           push: true # Push the image to Docker Hub
